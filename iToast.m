@@ -4,7 +4,7 @@ iToast.m
 
 MIT LICENSE
 
-Copyright (c) 2011 Travis CI development team
+Copyright (c) 2011 Guru Software
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -71,7 +71,12 @@ static iToastSettings *sharedSettings = nil;
 	UIImage *image = [theSettings.images valueForKey:[NSString stringWithFormat:@"%i", type]];
 	
 	UIFont *font = [UIFont systemFontOfSize:theSettings.fontSize];
-	CGSize textSize = [text sizeWithFont:font constrainedToSize:CGSizeMake(280, 60)];
+
+    NSAttributedString *attributedText =[[NSAttributedString alloc] initWithString:text attributes:@{ NSFontAttributeName: font}];
+    CGRect rect = [attributedText boundingRectWithSize:CGSizeMake(280, 60)
+                                               options:NSStringDrawingUsesLineFragmentOrigin
+                                               context:nil];
+    CGSize textSize = rect.size;
 	
 	UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, 0, textSize.width + kComponentPadding, textSize.height + kComponentPadding)];
 	label.backgroundColor = [UIColor clearColor];
@@ -90,13 +95,13 @@ static iToastSettings *sharedSettings = nil;
         
         switch ([theSettings imageLocation]) {
             case iToastImageLocationLeft:
-                [label setTextAlignment:UITextAlignmentLeft];
+                [label setTextAlignment:NSTextAlignmentLeft];
                 label.center = CGPointMake(image.size.width + kComponentPadding * 2 
                                            + (v.frame.size.width - image.size.width - kComponentPadding * 2) / 2, 
                                            v.frame.size.height / 2);
                 break;
             case iToastImageLocationTop:
-                [label setTextAlignment:UITextAlignmentCenter];
+                [label setTextAlignment:NSTextAlignmentCenter];
                 label.center = CGPointMake(v.frame.size.width / 2, 
                                            (image.size.height + kComponentPadding * 2 
                                             + (v.frame.size.height - image.size.height - kComponentPadding * 2) / 2));
@@ -128,10 +133,11 @@ static iToastSettings *sharedSettings = nil;
 	
 	UIWindow *window = [[[UIApplication sharedApplication] windows] objectAtIndex:0];
 	
-	CGPoint point;
+	CGPoint point = CGPointZero;
 	
 	// Set correct orientation/location regarding device orientation
 	UIInterfaceOrientation orientation = (UIInterfaceOrientation)[[UIApplication sharedApplication] statusBarOrientation];
+	double version = [[[UIDevice currentDevice] systemVersion] doubleValue];
 	switch (orientation) {
 		case UIDeviceOrientationPortrait:
 		{
@@ -150,7 +156,9 @@ static iToastSettings *sharedSettings = nil;
 		}
 		case UIDeviceOrientationPortraitUpsideDown:
 		{
-			v.transform = CGAffineTransformMakeRotation(M_PI);
+			if (version < 8.0) {
+				v.transform = CGAffineTransformMakeRotation(M_PI);
+			}
 			
 			float width = window.frame.size.width;
 			float height = window.frame.size.height;
@@ -171,7 +179,9 @@ static iToastSettings *sharedSettings = nil;
 		}
 		case UIDeviceOrientationLandscapeLeft:
 		{
-			v.transform = CGAffineTransformMakeRotation(M_PI/2); //rotation in radians
+			if (version < 8.0) {
+				v.transform = CGAffineTransformMakeRotation(M_PI/2); //rotation in radians
+			}
 			
 			if (theSettings.gravity == iToastGravityTop) {
 				point = CGPointMake(window.frame.size.width - 45, window.frame.size.height / 2);
@@ -189,7 +199,9 @@ static iToastSettings *sharedSettings = nil;
 		}
 		case UIDeviceOrientationLandscapeRight:
 		{
-			v.transform = CGAffineTransformMakeRotation(-M_PI/2);
+			if (version < 8.0) {
+				v.transform = CGAffineTransformMakeRotation(-M_PI/2);
+			}
 			
 			if (theSettings.gravity == iToastGravityTop) {
 				point = CGPointMake(45, window.frame.size.height / 2);
@@ -374,6 +386,8 @@ static iToastSettings *sharedSettings = nil;
 
 
 @implementation iToastSettings
+@synthesize offsetLeft;
+@synthesize offsetTop;
 @synthesize duration;
 @synthesize gravity;
 @synthesize postition;
